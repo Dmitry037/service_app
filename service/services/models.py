@@ -1,7 +1,7 @@
 from django.core.validators import MaxValueValidator
 from django.db import models
 
-from service.clients.models import Client
+from clients.models import Client
 
 
 class Service(models.Model):
@@ -27,4 +27,4 @@ class Plan(models.Model):
 class Subscription(models.Model):
     client = models.ForeignKey(Client, related_name='subscriptions', on_delete=models.PROTECT)
     service =models.ForeignKey(Service, related_name='subscriptions', on_delete=models.PROTECT)
-    plan = models.ForeignKey(Service, related_name='subscriptions', on_delete=models.PROTECT)
+    plan = models.ForeignKey(Plan, related_name='subscriptions', on_delete=models.PROTECT)
