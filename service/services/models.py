@@ -11,37 +11,27 @@ class Service(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__full_price = self.full_price # запоминаем цену
+        self.__full_price = self.full_price
 
     def save(self, *args, **kwargs):
-        # Проверяем, что объект уже существует в базе данных
-        if self.pk is not None:  # self.pk будет None для новых объектов
-            # Проверяем, изменился ли discount_percent
-            if self.discount_percent != self.__discount_percent:
-                for subscription in self.subscriptions.all():
-                    set_price.delay(subscription.id)
-                    set_comment.delay(subscription.id)
-        super().save(*args, **kwargs)  # Сохраняем объект
-        # Обновляем запомненную скидку после сохранения
-        self.__discount_percent = self.discount_percent
-
-    # def save(self, *args, **kwargs):
-    #     if self.full_price != self.__full_price:
-    #         for subscription in self.subscriptions.all():
-    #             set_price.delay(subscription.id)
-    #             set_comment.delay(subscription.id)
-    #     return super().save(*args, **kwargs) # пересчитываем цену при изменении
+        if not hasattr(self, '__full_price'):
+            self.__full_price = self.full_price  # Инициализация при первом сохранении
+        if self.pk is not None and self.full_price != self.__full_price:
+            for subscription in self.subscriptions.all():
+                set_price.delay(subscription.id)
+                set_comment.delay(subscription.id)
+        super().save(*args, **kwargs)
+        self.__full_price = self.full_price
 
     def __str__(self):
         return f"{self.name}"
 
 
-
 class Plan(models.Model):
     Plan_types = (
-        ('full','Full'),
-        ('student','Student'),
-        ('discount','Discount')
+        ('full', 'Full'),
+        ('student', 'Student'),
+        ('discount', 'Discount')
     )
 
     plan_type = models.CharField(choices=Plan_types, max_length=10)
@@ -52,37 +42,29 @@ class Plan(models.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__discount_percent = self.discount_percent # запоминаем скидку
+        self.__discount_percent = self.discount_percent
 
     def save(self, *args, **kwargs):
-        if self.pk is not None:
-            if self.discount_percent != self.__discount_percent:
+        if not hasattr(self, '__discount_percent'):
+            self.__discount_percent = self.discount_percent  # Инициализация при первом сохранении
+        if self.pk is not None and self.discount_percent != self.__discount_percent:
+            if self.subscriptions.exists():  # Проверяем наличие связанных подписок
                 for subscription in self.subscriptions.all():
                     set_price.delay(subscription.id)
                     set_comment.delay(subscription.id)
-            return super().save(*args, **kwargs)  # пересчитываем цену при изменении скидки
-
+        super().save(*args, **kwargs)
+        self.__discount_percent = self.discount_percent
 
     def __str__(self):
         return f"{self.plan_type}"
 
 
-
 class Subscription(models.Model):
     client = models.ForeignKey(Client, related_name='subscriptions', on_delete=models.PROTECT)
-    service =models.ForeignKey(Service, related_name='subscriptions', on_delete=models.PROTECT)
+    service = models.ForeignKey(Service, related_name='subscriptions', on_delete=models.PROTECT)
     plan = models.ForeignKey(Plan, related_name='subscriptions', on_delete=models.PROTECT)
     price = models.PositiveIntegerField(default=0)
     comment = models.CharField(max_length=50, default='')
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.__plan = self.plan  # запоминаем план
-    #
-    # def save(self, *args, **kwargs):
-    #     if self.plan != self.__plan:
-    #         set_price.delay(self.id)
-    #     return super().save(*args, **kwargs)  # пересчитываем цену при изменении плана
-    #
-    # def __str__(self):
-    #     return f"Subscription of {self.client} on {self.service}"
+    def __str__(self):
+        return f"Subscription of {self.client} on {self.service}"
