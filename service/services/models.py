@@ -14,11 +14,23 @@ class Service(models.Model):
         self.__full_price = self.full_price # запоминаем цену
 
     def save(self, *args, **kwargs):
-        if self.full_price != self.__full_price:
-            for subscription in self.subscriptions.all():
-                set_price.delay(subscription.id)
-                set_comment.delay(subscription.id)
-        return super().save(*args, **kwargs) # пересчитываем цену при изменении
+        # Проверяем, что объект уже существует в базе данных
+        if self.pk is not None:  # self.pk будет None для новых объектов
+            # Проверяем, изменился ли discount_percent
+            if self.discount_percent != self.__discount_percent:
+                for subscription in self.subscriptions.all():
+                    set_price.delay(subscription.id)
+                    set_comment.delay(subscription.id)
+        super().save(*args, **kwargs)  # Сохраняем объект
+        # Обновляем запомненную скидку после сохранения
+        self.__discount_percent = self.discount_percent
+
+    # def save(self, *args, **kwargs):
+    #     if self.full_price != self.__full_price:
+    #         for subscription in self.subscriptions.all():
+    #             set_price.delay(subscription.id)
+    #             set_comment.delay(subscription.id)
+    #     return super().save(*args, **kwargs) # пересчитываем цену при изменении
 
     def __str__(self):
         return f"{self.name}"
@@ -43,11 +55,13 @@ class Plan(models.Model):
         self.__discount_percent = self.discount_percent # запоминаем скидку
 
     def save(self, *args, **kwargs):
-        if self.discount_percent != self.__discount_percent:
-            for subscription in self.subscriptions.all():
-                set_price.delay(subscription.id)
-                set_comment.delay(subscription.id)
-        return super().save(*args, **kwargs) # пересчитываем цену при изменении скидки
+        if self.pk is not None:
+            if self.discount_percent != self.__discount_percent:
+                for subscription in self.subscriptions.all():
+                    set_price.delay(subscription.id)
+                    set_comment.delay(subscription.id)
+            return super().save(*args, **kwargs)  # пересчитываем цену при изменении скидки
+
 
     def __str__(self):
         return f"{self.plan_type}"
