@@ -27,3 +27,6 @@ EXPOSE 8000
 
 # Команда по умолчанию для запуска Gunicorn
 CMD ["gunicorn", "service.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+
+RUN mkdir -p /service/static && chmod -R 777 /service/static
+RUN python manage.py collectstatic --noinput
