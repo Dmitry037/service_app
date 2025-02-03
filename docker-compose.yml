@@ -4,10 +4,12 @@ services:
   web-app:
     build:
       context: .
-    ports:
-      - "8000:8000"  # Можно убрать этот порт, если запросы будут идти только через Nginx
+      dockerfile: dockerfile
     volumes:
-      - ./service:/service
+      - static_volume:/service/static
+      - media_volume:/service/media
+    expose:
+      - 8000  # Открываем порт для взаимодействия с nginx
     environment:
       - DB_HOST=database
       - DB_NAME=dbname
@@ -22,6 +24,8 @@ services:
       - POSTGRES_DB=dbname
       - POSTGRES_USER=dbuser
       - POSTGRES_PASSWORD=pass
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
   nginx:
     image: nginx:latest
@@ -32,3 +36,8 @@ services:
       - "80:80"
     depends_on:
       - web-app
+
+volumes:
+  static_volume:
+  media_volume:
+  db_data:
