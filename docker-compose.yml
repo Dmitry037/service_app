@@ -30,8 +30,8 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf  # Подключаем наш конфиг
-      - ./service/static:/service/static  # Для статических файлов
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./static:/service/static
     ports:
       - "8080:80"
     depends_on:

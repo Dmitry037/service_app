@@ -46,5 +46,7 @@ EXPOSE 8000
 # Переключаемся на пользователя
 USER www-data
 
+RUN python manage.py collectstatic --noinput
+
 # Команда запуска
 CMD ["gunicorn", "service.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
