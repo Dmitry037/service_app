@@ -31,7 +31,7 @@ services:
     image: nginx:latest
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./static:/service/static
+      - static_volume:/service/static
     ports:
       - "8080:80"
     depends_on:
